@@ -1,3 +1,28 @@
+"
+I am a demonstration of a ""Hybrid-State"" web application engine. 
+
+My primary purpose is to show how a Pharo application can seamlessly transition between a ""Live"" development state (reading from the Mac filesystem) and a ""Frozen"" production state (reading from baked-in methods).
+
+Conceptual Architecture:
+1. The Resolver: I use a fallback logic in #templateNamed:. If a local directory is provided, I prioritize disk files. If not, I ""thaw"" templates from internal methods.
+2. The Freezer: I provide a mechanism to compile external Mustache/HTML files into Smalltalk methods prefixed with #frozenTemplate. This allows the .image to be distributed as a single, zero-dependency binary.
+
+Key Implementation Points:
+- #rootPath: When set, the app operates in ""Live Mode."" When nil, it operates in ""Frozen Mode.""
+- #frozenTemplate*: These are generated methods that act as an internal virtual filesystem.
+
+Public API for the Demo:
+- ConduitWebApp freeze: aPath : Use this to ""freeze"" your HTML folder into the image.
+- ConduitWebApp unfreeze : Use this to ""wipe"" the frozen assets and return to a clean engine state.
+- #start / #stop : Controls the Teapot/Zinc server.
+
+Example:
+    ""1. Development Mode (Live files)""
+    (ConduitWebApp new rootPath: '/Users/name/dev/shared') start.
+
+    ""2. Production Mode (No files needed)""
+    ConduitWebApp new start.
+"
 Class {
 	#name : 'ConduitWebApp',
 	#superclass : 'Object',
@@ -10,23 +35,22 @@ Class {
 	#package : 'Conduit-Core'
 }
 
-{ #category : 'as yet unclassified' }
+{ #category : 'actions' }
 ConduitWebApp class >> freeze: aPath [
-    | folder |
-    folder := aPath asFileReference.
-    
-    (folder children select: [ :each | each isFile ]) do: [ :file | 
-        | methodName content |
-        methodName := 'frozenTemplate' , file base capitalized.
-        content := file contents.
-        
-        "Target the instance side explicitly so 'self perform:' works later"
-        self instanceSide compile: (String streamContents: [ :s |
-            s nextPutAll: methodName; cr.
-            s nextPutAll: '    ^ '; nextPutAll: content asString printString ])
-        classified: 'content-templates' ].
-    
-    Transcript show: 'Freeze complete: Assets baked into Instance Side.'; cr.
+	| folder |
+	folder := aPath asFileReference.
+
+	(folder children select: [ :each | each isFile ]) do: [ :file | 
+		| content |
+		content := file contents.
+
+		"Target the instance side explicitly so 'self perform:' works later"
+		self instanceSide compile: (String streamContents: [ :s |
+			s nextPutAll: 'frozenTemplate'; nextPutAll: file base capitalized; cr.
+			s nextPutAll: '    ^ '; nextPutAll: content asString printString ])
+		classified: 'content-templates' ].
+
+	Transcript show: 'Freeze complete: Assets baked into Instance Side.'; cr.
 ]
 
 { #category : 'public' }
@@ -37,7 +61,7 @@ ConduitWebApp class >> startOn: aPath [
 		yourself
 ]
 
-{ #category : 'as yet unclassified' }
+{ #category : 'actions' }
 ConduitWebApp class >> unfreeze [
     | count |
     count := 0.
@@ -85,7 +109,7 @@ ConduitWebApp >> renderPage: aPageName [
             TeaResponse notFound body: '<h1>404: Template not found</h1>' ]
 ]
 
-{ #category : 'as yet unclassified' }
+{ #category : 'template-resolution' }
 ConduitWebApp >> resolvePartials [
     | dict |
     "If Disk is active, use its registry"
@@ -112,7 +136,7 @@ ConduitWebApp >> rootPath: aStringOrFileReference [
     rootPath := aStringOrFileReference asFileReference
 ]
 
-{ #category : 'as yet unclassified' }
+{ #category : 'initialization' }
 ConduitWebApp >> setupRoutes [
 	"1. The Root Redirect"
     teapot GET: '/' -> [ TeaResponse redirect location: '/index'; yourself ].
@@ -126,7 +150,7 @@ ConduitWebApp >> setupRoutes [
     teapot GET: '/<page>' -> [ :req | self renderPage: (req at: #page) ].
 ]
 
-{ #category : 'accessing' }
+{ #category : 'control' }
 ConduitWebApp >> start [
     self stop.
     
@@ -149,7 +173,7 @@ ConduitWebApp >> start [
         (rootPath ifNotNil: [ 'Disk/Live' ] ifNil: [ 'Image/Frozen' ]), ')'; cr.
 ]
 
-{ #category : 'accessing' }
+{ #category : 'control' }
 ConduitWebApp >> stop [
 
 	teapot ifNotNil: [ teapot stop. teapot := nil ].
