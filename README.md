@@ -21,6 +21,27 @@ Metacello new
     load.
 ```
 
+## 🚀 Quick Start
+
+Once you have composed your class with the Conduit traits, you can spin up the server in two modes:
+
+### 1. Live Development Mode
+
+Point the engine to your local directory. Changes to `.mustache` files on your disk will reflect instantly in the browser.
+```smalltalk
+app := ConduitTraitWebApp new.
+app startOn: '/Users/name/Projects/my-web-assets'.
+```
+
+### 2. Frozen / Production Mode
+
+If you have already run freeze:, you can start the app without a local path. It will serve templates directly from the compiled Smalltalk methods.
+
+```smalltalk
+app := ConduitTraitWebApp new.
+app startOn: nil.
+```
+
 ## 🏗 Trait-Based Architecture
 
 Conduit has been refactored from a monolithic class into a modular Trait system. This allows you to "plug in" hybrid-state capabilities to any object, including Seaside components or Zinc delegates.
@@ -80,25 +101,4 @@ The included `ConduitTraitWebApp` serves as a reference implementation. It demon
 "Example Route Mapping"
 server GET: '/' -> [ self renderPage: 'index' ].
 server GET: '/<page>' -> [ :req | self renderPage: (req at: #page) ].
-```
-
-## 🚀 Quick Start
-
-Once you have composed your class with the Conduit traits, you can spin up the server in two modes:
-
-### 1. Live Development Mode
-
-Point the engine to your local directory. Changes to `.mustache` files on your disk will reflect instantly in the browser.
-```smalltalk
-app := ConduitTraitWebApp new.
-app startOn: '/Users/name/Projects/my-web-assets'.
-```
-
-### 2. Frozen / Production Mode
-
-If you have already run freeze:, you can start the app without a local path. It will serve templates directly from the compiled Smalltalk methods.
-
-```smalltalk
-app := ConduitTraitWebApp new.
-app startOn: nil.
 ```
