@@ -55,10 +55,13 @@ ConduitWebApp class >> freeze: aPath [
 
 { #category : 'public' }
 ConduitWebApp class >> startOn: aPath [
-	^ self new
-		rootPath: aPath;
-		start;
-		yourself
+
+	| instance |
+	instance := self new.
+	aPath ifNotNil: [
+			instance rootPath: aPath asFileReference.
+			instance start ].
+	^ instance
 ]
 
 { #category : 'actions' }
@@ -74,6 +77,11 @@ ConduitWebApp class >> unfreeze [
     Transcript 
         show: '[', Time now print24, '] Unfreeze: Removed ', count asString, ' frozen templates.'; 
         cr.
+]
+
+{ #category : 'accessing' }
+ConduitWebApp >> conduit [
+	^ conduit
 ]
 
 { #category : 'rendering' }
@@ -131,9 +139,9 @@ ConduitWebApp >> rootPath [
 ]
 
 { #category : 'accessing' }
-ConduitWebApp >> rootPath: aStringOrFileReference [
-	"This converts a String into a FileReference if needed"
-    rootPath := aStringOrFileReference asFileReference
+ConduitWebApp >> rootPath: aPath [
+    "Only convert to a FileReference if we actually have a path"
+    rootPath := aPath ifNotNil: [ aPath asFileReference ].
 ]
 
 { #category : 'initialization' }
