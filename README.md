@@ -39,7 +39,7 @@ Start the application by pointing it to your local template directory. Any chang
 
 ```smalltalk
 "Starts the server on http://localhost:8080"
-app := ConduitWebApp startOn: '/Users/Nathan/Development/Project/shared'.
+app := ConduitWebApp startOn: '/Users/you/development/project/shared'.
 ```
 
 ### 2. Production Mode (Frozen)
@@ -48,7 +48,7 @@ When you are ready to distribute your app, "freeze" the external assets into the
 
 ```smalltalk
 "Bake the folder contents into the ConduitWebApp class"
-ConduitWebApp freeze: '/Users/Nathan/Development/Project/shared'.
+ConduitWebApp freeze: '/Users/you/development/project/shared'.
 
 "You can now move the image to any machine and start it without the folder"
 app := ConduitWebApp new start.
