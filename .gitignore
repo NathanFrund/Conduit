@@ -1,0 +1,12 @@
+# Pharo Image files
+*.image
+*.changes
+*.sources
+
+# Local working directories
+pharo-local/
+play-cache/
+play-stash/
+
+# Artifacts
+*.filetree
