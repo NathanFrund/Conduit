@@ -17,7 +17,7 @@ BaselineOfConduit >> baseline: spec [
 			"2. Your Packages"
 			spec
 				package: 'Conduit-Core' with: [ spec requires: #( 'Mustache' ) ];
-				package: 'Conduit-Tests'
+				package: 'ConduitCore-Tests'
 				with: [ spec requires: #( 'Conduit-Core' ) ].
 
 			"3. Groups (Convenience for the user)"
