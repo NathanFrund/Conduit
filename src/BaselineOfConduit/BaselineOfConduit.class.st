@@ -22,5 +22,5 @@ BaselineOfConduit >> baseline: spec [
         "3. Groups (Convenience for the user)"
         spec 
             group: 'default' with: #('Conduit-Core');
-            group: 'Tests' with: #('Conduit-Tests') ]
+            group: 'Tests' with: #('ConduitCore-Tests') ]
 ]
