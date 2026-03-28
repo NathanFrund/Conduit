@@ -31,8 +31,9 @@ Class {
 		'conduit',
 		'rootPath'
 	],
-	#category : 'Conduit-Core',
-	#package : 'Conduit-Core'
+	#category : 'Conduit-Core-Base',
+	#package : 'Conduit-Core',
+	#tag : 'Base'
 }
 
 { #category : 'actions' }

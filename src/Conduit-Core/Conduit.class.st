@@ -32,8 +32,9 @@ Class {
 		'processors',
 		'lastCheck'
 	],
-	#category : 'Conduit-Core',
-	#package : 'Conduit-Core'
+	#category : 'Conduit-Core-Base',
+	#package : 'Conduit-Core',
+	#tag : 'Base'
 }
 
 { #category : 'accessing' }
