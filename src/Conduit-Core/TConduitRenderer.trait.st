@@ -84,7 +84,7 @@ TConduitRenderer >> resolvePartials [
 	dict := Dictionary new. 
 	(self class selectors select: [ :s | s beginsWith: 'frozenTemplate' ]) do: [ :sel | 
 		| key |
-		key := (sel copyFrom: 15 to: sel size) asLowercase. "Updated offset for 'frozenTemplate'" 
+		key := (sel copyFrom: 15 to: sel size) asLowercase.
 		dict at: key put: (MustacheTemplate on: (self perform: sel)) ]. 
 	^ dict 
 ]

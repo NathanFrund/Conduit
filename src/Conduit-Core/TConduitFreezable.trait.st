@@ -29,33 +29,132 @@ Trait {
 }
 
 { #category : 'actions' }
-TConduitFreezable >> freeze: aPath [
-    | folder |
-    folder := aPath asFileReference.
+TConduitFreezable classSide >> freeze: aPath [
+    | root |
+    root := aPath asFileReference.
+    
+    "1. Freeze templates from templates/ subdirectory"
+    (root / 'templates') exists ifTrue: [
+        (root / 'templates') children select: [ :each | each isFile ] thenDo: [ :file |
+            | content methodName |
+            content := file contents.
+            methodName := 'frozenTemplate', file base capitalized.
+            self instanceSide compile: (String streamContents: [ :s |
+                s nextPutAll: methodName; cr.
+                s nextPutAll: '    ^ '; nextPutAll: content asString printString ])
+            classified: 'frozen-templates'.
+            Transcript show: '  Frozen template: ', file base; cr ] ].
+    
+    "2. Freeze CSS assets"
+    (root / 'css') exists ifTrue: [
+        (root / 'css') children select: [ :each | each isFile ] thenDo: [ :file |
+            | content methodName |
+            content := file contents.
+            methodName := 'frozenAsset', file base capitalized, file extension capitalized.
+            self instanceSide compile: (String streamContents: [ :s |
+                s nextPutAll: methodName; cr.
+                s nextPutAll: '    ^ '; nextPutAll: content asString printString ])
+            classified: 'frozen-assets'.
+            Transcript show: '  Frozen asset: css/', file base; cr ] ].
+    
+    "3. Freeze JS assets"
+    (root / 'js') exists ifTrue: [
+        (root / 'js') children select: [ :each | each isFile ] thenDo: [ :file |
+            | content methodName |
+            content := file contents.
+            methodName := 'frozenAsset', file base capitalized, file extension capitalized.
+            self instanceSide compile: (String streamContents: [ :s |
+                s nextPutAll: methodName; cr.
+                s nextPutAll: '    ^ '; nextPutAll: content asString printString ])
+            classified: 'frozen-assets'.
+            Transcript show: '  Frozen asset: js/', file base; cr ] ].
+    
+    Transcript show: 'Freeze complete!'; cr.
+]
 
-    (folder children select: [ :each | each isFile ]) do: [ :file | 
-        | content |
+{ #category : 'as yet unclassified' }
+TConduitFreezable classSide >> freezeAsset: aFileReference category: aCategory [
+    | content methodName |
+    content := aFileReference contents.
+    methodName := 'frozenAsset', aFileReference base capitalized, aFileReference extension capitalized.
+    self instanceSide compile: (String streamContents: [ :s |
+        s nextPutAll: methodName; cr.
+        s nextPutAll: '    ^ '; nextPutAll: content asString printString ])
+    classified: 'frozen-assets'.
+    Transcript show: '  Frozen asset: ', aCategory, '/', aFileReference base; cr.
+]
+
+{ #category : 'as yet unclassified' }
+TConduitFreezable classSide >> freezeAssets: aPath [
+    | root |
+    root := aPath asFileReference.
+    
+    "Freeze CSS"
+    (root / 'css') exists ifTrue: [
+        (root / 'css') children select: [ :each | each isFile ] thenDo: [ :file |
+            self freezeAsset: file category: 'css' ] ].
+    
+    "Freeze JS"
+    (root / 'js') exists ifTrue: [
+        (root / 'js') children select: [ :each | each isFile ] thenDo: [ :file |
+            self freezeAsset: file category: 'js' ] ].
+]
+
+{ #category : 'as yet unclassified' }
+TConduitFreezable classSide >> freezeCSS: aPath [
+    | root |
+    root := aPath asFileReference.
+    (root / 'css') exists ifTrue: [
+        (root / 'css') children select: [ :each | each isFile ] thenDo: [ :file |
+            self freezeAsset: file category: 'css' ] ].
+    Transcript show: 'CSS assets frozen.'; cr.
+]
+
+{ #category : 'as yet unclassified' }
+TConduitFreezable classSide >> freezeJS: aPath [
+    | root |
+    root := aPath asFileReference.
+    (root / 'js') exists ifTrue: [
+        (root / 'js') children select: [ :each | each isFile ] thenDo: [ :file |
+            self freezeAsset: file category: 'js' ] ].
+    Transcript show: 'JS assets frozen.'; cr.
+]
+
+{ #category : 'as yet unclassified' }
+TConduitFreezable classSide >> freezeTemplates: aPath [
+    | root |
+    root := aPath asFileReference.
+    
+    (root / 'templates') exists ifFalse: [ 
+        Transcript show: 'No templates directory found.'; cr.
+        ^ self ].
+    
+    (root / 'templates') children select: [ :each | each isFile ] thenDo: [ :file |
+        | content methodName |
         content := file contents.
-
-        "Target the instance side explicitly so 'self perform:' works later"
+        methodName := 'frozenTemplate', file base capitalized.
         self instanceSide compile: (String streamContents: [ :s |
-            s nextPutAll: 'frozenTemplate'; nextPutAll: file base capitalized; cr.
+            s nextPutAll: methodName; cr.
             s nextPutAll: '    ^ '; nextPutAll: content asString printString ])
-        classified: 'content-templates' ].
-
-    Transcript show: 'Freeze complete: Assets frozen in Instance Side.'; cr.
+        classified: 'frozen-templates'.
+        Transcript show: '  Frozen template: ', file base; cr ].
 ]
 
 { #category : 'actions' }
-TConduitFreezable >> unfreeze [
-	| count |
-	count := 0. 
-	(self instanceSide selectors select: [ :s | s beginsWith: 'frozenTemplate' ])
-		do: [ :sel |
-			self instanceSide removeSelector: sel. 
-			count := count + 1 ]. 
-
-	Transcript 
-		show: '[', Time now print24, '] Unfreeze: Removed ', count asString, ' frozen templates.'; 
-		cr.
+TConduitFreezable classSide >> unfreeze [
+    | count classSide |
+    count := 0.
+    classSide := self instanceSide.
+    
+    "Remove frozen templates"
+    (classSide selectors select: [ :s | s beginsWith: 'frozenTemplate' ]) do: [ :sel |
+        classSide removeSelector: sel.
+        count := count + 1 ].
+    
+    "Remove frozen assets"
+    (classSide selectors select: [ :s | s beginsWith: 'frozenAsset' ]) do: [ :sel |
+        classSide removeSelector: sel.
+        count := count + 1 ].
+    
+    Transcript show: '[', Time now print24, '] Unfreeze: Removed ', count asString, ' frozen methods.'; cr.
 ]

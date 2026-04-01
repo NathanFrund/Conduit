@@ -36,7 +36,7 @@ Class {
 	#name : 'ConduitTraitWebApp',
 	#superclass : 'Object',
 	#traits : 'TConduitRenderer + THtmxRenderer',
-	#classTraits : 'TConduitRenderer classTrait + THtmxRenderer classTrait',
+	#classTraits : 'TConduitRenderer classTrait + THtmxRenderer classTrait + TConduitFreezable classTrait',
 	#instVars : [
 		'conduit',
 		'rootPath',
@@ -47,60 +47,123 @@ Class {
 	#tag : 'Base'
 }
 
+{ #category : 'as yet unclassified' }
+ConduitTraitWebApp class >> killAll [
+    "Emergency cleanup: kill all running instances and background processes"
+    
+    "Stop all app instances"
+    self allInstances do: [ :each | each stop ].
+    
+    "Kill any Conduit watcher processes"
+    Process allInstances do: [ :p |
+        (p name notNil and: [ p name includesSubstring: 'Conduit' ]) 
+            ifTrue: [ 
+                Transcript show: 'Terminating process: ', p name; cr.
+                p terminate ] ].
+    
+    "Kill any Teapot servers"
+    Teapot stopAll.
+    
+    "Force garbage collection"
+    Smalltalk garbageCollect.
+    
+    Transcript show: 'All Conduit processes terminated.'; cr.
+]
+
 { #category : 'accessing' }
 ConduitTraitWebApp >> conduit [ 
 	"Satisfies TConduitRenderer requirement"
 	^ conduit
 ]
 
+{ #category : 'as yet unclassified' }
+ConduitTraitWebApp >> serveFrozenAsset: aPathString [
+    "Try to find a frozen method for a given path like 'css/style.css'"
+    | fileRef methodName |
+    fileRef := aPathString asFileReference.
+    methodName := ('frozenAsset', fileRef base capitalized, fileRef extension capitalized) asSymbol.
+    
+    Transcript show: 'serveFrozenAsset called with: ', aPathString; cr.
+    Transcript show: '  fileRef base: ', fileRef base; cr.
+    Transcript show: '  fileRef extension: ', fileRef extension; cr.
+    Transcript show: '  Looking for method: ', methodName; cr.
+    
+    (self respondsTo: methodName) ifTrue: [ 
+        Transcript show: '  ✓ Method found! Returning content.'; cr.
+        ^ ZnResponse ok: (ZnEntity 
+            with: (self perform: methodName) 
+            type: (ZnMimeType 
+                forFilenameExtension: fileRef extension 
+                ifAbsent: [ ZnMimeType applicationOctetStream ])) ].
+    
+    Transcript show: '  ✗ Method NOT found!'; cr.
+    ^ ZnResponse notFound: aPathString
+]
+
+{ #category : 'accessing' }
+ConduitTraitWebApp >> server [
+	^ server
+]
+
 { #category : 'public' }
 ConduitTraitWebApp >> startOn: aPath [
+    self stop.
 
-	self stop. "Clean up any existing instance before starting a new one"
+    rootPath := aPath ifNotNil: [ aPath asFileReference ].
 
-	rootPath := aPath ifNotNil: [ aPath asFileReference ].
+    "Initialize the engine"
+    rootPath ifNotNil: [
+        conduit := Conduit pointingAt: rootPath pathString.
+        conduit start ].
 
-	"Initialize the engine"
-	rootPath ifNotNil: [
-			conduit := Conduit pointingAt: rootPath pathString.
-			conduit start ].
+    "Setup Teapot"
+    server := Teapot configure: { (#port -> 8081) }.
 
-	"Setup Teapot"
-	server := Teapot configure: { (#port -> 8081) }. "Using 8081 to avoid conflict"
+    "Static Assets - Disk (Development)"
+    rootPath ifNotNil: [
+        server serveStatic: '/static' from: rootPath pathString ].
 
-	server GET: '/' -> [ self renderPage: 'index' ].
+    "Static Assets - Frozen Fallback (Production)"
+    server GET: '/static/*' -> [ :req | 
+        | fullPath assetPath |
+        fullPath := req url path.
+        assetPath := fullPath allButFirst: 8.  "Remove '/static/'"
+        self serveFrozenAsset: assetPath ].
 
-	server GET: '/clicked' -> [ :req |
-			Transcript
-				show: 'HTMX Request received!';
-				cr.
-			self
-				render: 'clicked_response'
-				request: req
-				context: { ('time' -> Time now print24) } asDictionary ].
+    "HTMX Click Handler"
+    server GET: '/clicked' -> [ :req |
+        self render: 'clicked_response' request: req 
+            context: { ('time' -> Time now print24) } asDictionary ].
 
-	server GET: '/<page>' -> [ :req | self renderPage: (req at: #page) ].
+    "General Routing"
+    server GET: '/' -> [ self renderPage: 'index' ].
+    server GET: '/<page>' -> [ :req | self renderPage: (req at: #page) ].
 
-	server start.
-	Transcript
-		show: 'New WebApp started on 8081';
-		cr
+    server start.
+    Transcript show: 'Server started on port 8081'; cr.
 ]
 
 { #category : 'accessing' }
 ConduitTraitWebApp >> stop [
+    "Completely stop the server and clean up all background processes"
+    
     "1. Stop the Teapot server"
     server ifNotNil: [ 
-        server stop. 
+        server stop.
         server := nil ].
-
-    "2. Stop the Conduit engine (if it was started)"
+    
+    "2. Stop the Conduit engine and kill its watcher process"
     conduit ifNotNil: [ 
-        conduit stop. 
+        conduit stop.      "This should terminate the watcherProcess"
         conduit := nil ].
-
-    "3. Nuclear option: ensure all Teapot instances are cleared"
+    
+    "3. Safety: Kill any lingering Conduit watcher processes by name"
+    Process allInstances do: [ :p |
+        (p name notNil and: [ p name includesSubstring: 'ConduitWatchr' ]) 
+            ifTrue: [ p terminate ] ].
+    
+    "4. Clear Teapot instances from the port"
     Teapot stopAll.
     
-    Transcript show: 'WebApp and Conduit engine stopped.'; cr.
+    Transcript show: 'WebApp fully stopped and cleaned up.'; cr.
 ]

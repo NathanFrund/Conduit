@@ -88,6 +88,8 @@ Conduit >> stop [
 		watcherProcess terminate.
 		watcherProcess := nil
 	].
+	registry removeAll.
+	lastCheck := DateAndTime unixEpoch.
 ]
 
 { #category : 'updating' }
