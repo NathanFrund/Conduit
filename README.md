@@ -43,16 +43,6 @@ app := ConduitTraitWebApp new.
 app startOn: nil.
 ```
 
-### 3. Custom Port
-
-You can also specify a custom port:
-
-```smalltalk
-app startOn: '/path/to/assets' port: 9000.
-"or"
-app port: 9000; startOn: nil.
-```
-
 ## 🏗 Trait-Based Architecture
 
 Conduit has been refactored from a monolithic class into a modular Trait system. This allows you to "plug in" hybrid-state capabilities to any object, including Seaside components or Zinc delegates.
