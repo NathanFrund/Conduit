@@ -159,6 +159,11 @@ ConduitTraitWebApp >> initialize [
 ]
 
 { #category : 'accessing' }
+ConduitTraitWebApp >> port [
+	^ port
+]
+
+{ #category : 'accessing' }
 ConduitTraitWebApp >> port: aPortNumber [
     "Set the port for the next start"
     port := aPortNumber.

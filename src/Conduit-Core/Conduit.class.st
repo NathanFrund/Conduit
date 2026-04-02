@@ -67,6 +67,11 @@ Conduit >> registry [
 ]
 
 { #category : 'accessing' }
+Conduit >> rootFolder [
+	^ rootFolder 
+]
+
+{ #category : 'accessing' }
 Conduit >> rootFolder: aFileReference [
 	rootFolder := aFileReference asFileReference.
 ]
