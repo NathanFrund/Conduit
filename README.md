@@ -28,6 +28,7 @@ Once you have composed your class with the Conduit traits, you can spin up the s
 ### 1. Live Development Mode
 
 Point the engine to your local directory. Changes to `.mustache` files on your disk will reflect instantly in the browser.
+
 ```smalltalk
 app := ConduitTraitWebApp new.
 app startOn: '/Users/name/Projects/my-web-assets'.
@@ -35,11 +36,21 @@ app startOn: '/Users/name/Projects/my-web-assets'.
 
 ### 2. Frozen / Production Mode
 
-If you have already run freeze:, you can start the app without a local path. It will serve templates directly from the compiled Smalltalk methods.
+If you have already run `freeze:`, you can start the app without a local path. It will serve templates directly from the compiled Smalltalk methods.
 
 ```smalltalk
 app := ConduitTraitWebApp new.
 app startOn: nil.
+```
+
+### 3. Custom Port
+
+You can also specify a custom port:
+
+```smalltalk
+app startOn: '/path/to/assets' port: 9000.
+"or"
+app port: 9000; startOn: nil.
 ```
 
 ## 🏗 Trait-Based Architecture
@@ -50,8 +61,10 @@ Conduit has been refactored from a monolithic class into a modular Trait system.
 
 To create a Conduit-powered app, compose your class as follows:
 
-* **Instance Side**: `TConduitRenderer` — Handles the logic for finding templates on disk or in the image and rendering them via Mustache.
-* **Class Side**: `TConduitFreezable` — Provides the `freeze:` and `unfreeze` actions to bake filesystem assets into Smalltalk methods.
+| Side | Trait | Responsibility |
+|:---|:---|:---|
+| **Instance** | `TConduitRenderer` + `THtmxRenderer` | Template resolution, HTMX support, page rendering |
+| **Class** | `TConduitFreezable` | `freeze:` and `unfreeze` actions |
 
 ### The Developer Contract
 
@@ -71,25 +84,33 @@ The core value of Conduit is its ability to resolve templates across different s
 
 1. **Disk Priority**: The engine first checks the `conduit` registry for a live file on disk.
 2. **Image Fallback**: If the disk is unavailable or the file is missing, it looks for a method named `frozenTemplate<Name>` on the instance side.
-3. **Layout Wrapping**: It automatically looks for a `layout` template. If found, it wraps the page content within it using the {{{content}}} placeholder.
+3. **Layout Wrapping**: It automatically looks for a `layout` template. If found, it wraps the page content within it using the `{{{content}}}` placeholder.
 4. **Partial Injection**: It scans all selectors beginning with `frozenTemplate` to automatically resolve Mustache partials (e.g., `{{> navbar}}`).
 
 ---
 
 ## Freezing for Production
 
-You can "bake" your external HTML files into the Pharo image so the app can run as a standalone binary without any external dependencies:
+You can "bake" your external HTML files and assets (CSS/JS) into the Pharo image so the app can run as a standalone binary without any external dependencies:
 
 ```smalltalk
-"Bake all templates in the folder into the class"
-ConduitTraitWebApp freeze: '/path/to/templates'.
+"Bake all templates and assets into the class"
+ConduitTraitWebApp freeze: '/path/to/shared'.
 
 "Clean them out later if needed"
 ConduitTraitWebApp unfreeze.
 ```
 
-* **`freeze:`** Scans the directory and compiles each file as a method prefixed with `frozenTemplate` in the `content-templates` protocol.
-* **`unfreeze`**: Removes all selectors starting with `frozenTemplate` from the instance side.
+- **`freeze:`** Scans the directory and compiles each `.mustache` file as a method prefixed with `frozenTemplate`, and each asset (CSS/JS) as `frozenAsset*` methods.
+- **`unfreeze`**: Removes all `frozenTemplate*` and `frozenAsset*` methods from the instance side.
+
+> **Note:** The directory structure expected by `freeze:` should contain:
+> ```
+> shared/
+> ├── templates/    (.mustache files)
+> ├── css/          (.css files)
+> └── js/           (.js files)
+> ```
 
 ---
 
@@ -100,5 +121,26 @@ The included `ConduitTraitWebApp` serves as a reference implementation. It demon
 ```smalltalk
 "Example Route Mapping"
 server GET: '/' -> [ self renderPage: 'index' ].
-server GET: '/<page>' -> [ :req | self renderPage: (req at: #page) ].
+server GET: '/clicked' -> [ :req |
+    self render: 'clicked_response' request: req 
+        context: { ('time' -> Time now print24) } asDictionary ].
+server GET: '/<page>' -> [ :req | 
+    self renderPage: (req at: #page) ].
 ```
+
+---
+
+## Testing
+
+Conduit includes a full test suite. To run the tests:
+
+```smalltalk
+TestRunner open.
+"Select the Conduit-Tests package"
+```
+
+---
+
+## License
+
+Conduit is released under the MIT License.
