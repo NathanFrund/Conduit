@@ -43,10 +43,11 @@ THtmxRenderer >> isHtmxRequest: aRequest [
 
     isHtmx := (aRequest headers at: 'HX-Request' ifAbsent: [ 'false' ]) = 'true'.
 
-    "Change pathString to asString"
-    Transcript 
-        show: '[HTMX Check] Path: ', aRequest url asString;
-        show: ' | Is HTMX? ', isHtmx asString; 
+    Transcript
+        nextPutAll: '[HTMX Check] Path: ';
+        nextPutAll: aRequest url asString;
+        nextPutAll: ' | Is HTMX? ';
+        nextPutAll: isHtmx asString;
         cr.
 
     ^ isHtmx

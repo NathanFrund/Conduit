@@ -71,17 +71,23 @@ ConduitTraitWebApp class >> killAll [
     Transcript show: 'All Conduit processes terminated.'; cr.
 ]
 
-{ #category : 'as yet unclassified' }
+{ #category : 'announcements' }
 ConduitTraitWebApp >> announceStarted [
     "Notify that the server is running"
     
-    Transcript 
-        show: 'Conduit server started on port ', port asString;
-        show: ' (', (rootPath ifNil: [ 'frozen' ] ifNotNil: [ 'disk' ]), ' mode)';
+    | mode |
+    mode := rootPath ifNil: [ 'frozen' ] ifNotNil: [ 'disk' ].
+    
+    Transcript
+        nextPutAll: 'Conduit server started on port ';
+        nextPutAll: port asString;
+        nextPutAll: ' (';
+        nextPutAll: mode;
+        nextPutAll: ' mode)';
         cr.
 ]
 
-{ #category : 'as yet unclassified' }
+{ #category : 'private' }
 ConduitTraitWebApp >> cleanupProcesses [
     "Terminate any leftover background processes"
     
@@ -98,8 +104,9 @@ ConduitTraitWebApp >> conduit [
 	^ conduit
 ]
 
-{ #category : 'as yet unclassified' }
+{ #category : 'routing' }
 ConduitTraitWebApp >> configureRoutes [
+<noCritique>
     server GET: '/' -> [ self renderPage: 'index' ].
     server GET: '/clicked' -> [ :req |
         self render: 'clicked_response' request: req 
@@ -108,7 +115,7 @@ ConduitTraitWebApp >> configureRoutes [
         self renderPage: (req at: #page) ].
 ]
 
-{ #category : 'as yet unclassified' }
+{ #category : 'routing' }
 ConduitTraitWebApp >> configureServerOnPort: aPortNumber [
     "Configure the Teapot server with all routes"
     
@@ -118,22 +125,28 @@ ConduitTraitWebApp >> configureServerOnPort: aPortNumber [
     self configureRoutes.
 ]
 
-{ #category : 'as yet unclassified' }
+{ #category : 'routing' }
 ConduitTraitWebApp >> configureStaticAssets [
     "Set up static asset serving for both disk and frozen modes"
     
     "Disk mode: serve directly from filesystem"
     rootPath ifNotNil: [
         server serveStatic: '/static' from: rootPath pathString.
-        Transcript show: 'Static assets from disk: ', rootPath pathString; cr ].
+        Transcript
+            nextPutAll: 'Static assets from disk: ';
+            nextPutAll: rootPath pathString;
+            cr ].
     
     "Frozen mode only: serve from methods"
     rootPath ifNil: [
-        server GET: '/static/*' -> [ :req | 
+        server GET: '/static/*' -> [ :req | "critic:ignore"
             | fullPath assetPath |
             fullPath := req url path.
-            assetPath := fullPath copyFrom: 9 to: fullPath size.  "Remove '/static/'"
-            Transcript show: 'Frozen static request: ', assetPath; cr.
+            assetPath := fullPath copyFrom: 9 to: fullPath size.
+            Transcript
+                nextPutAll: 'Frozen static request: ';
+                nextPutAll: assetPath;
+                cr.
             self serveFrozenAsset: assetPath ] ].
 ]
 
@@ -143,16 +156,18 @@ ConduitTraitWebApp >> initialize [
     
     super initialize.
     port := 8081.
-    rootPath := nil.
-    conduit := nil.
-    server := nil.
 ]
 
-{ #category : 'as yet unclassified' }
+{ #category : 'accessing' }
 ConduitTraitWebApp >> port: aPortNumber [
     "Set the port for the next start"
     port := aPortNumber.
     ^ self  "Return self for fluency"
+]
+
+{ #category : 'accessing' }
+ConduitTraitWebApp >> rootPath [ 
+	^ rootPath 
 ]
 
 { #category : 'accessing' }
@@ -162,10 +177,10 @@ ConduitTraitWebApp >> rootPath: aPath [
     ^ self
 ]
 
-{ #category : 'as yet unclassified' }
+{ #category : 'actions' }
 ConduitTraitWebApp >> serveFrozenAsset: aPathString [
     "Try to find a frozen method for a given path like 'css/style.css'"
-    | fileRef methodName |
+    | fileRef methodName content |
     fileRef := aPathString asFileReference.
     methodName := ('frozenAsset', fileRef base capitalized, fileRef extension capitalized) asSymbol.
     
@@ -174,10 +189,15 @@ ConduitTraitWebApp >> serveFrozenAsset: aPathString [
     Transcript show: '  fileRef extension: ', fileRef extension; cr.
     Transcript show: '  Looking for method: ', methodName; cr.
     
+    "Try to get the content from a frozen method"
+    content := nil.
     (self respondsTo: methodName) ifTrue: [ 
+        content := self perform: methodName ].
+    
+    content ifNotNil: [
         Transcript show: '  ✓ Method found! Returning content.'; cr.
         ^ ZnResponse ok: (ZnEntity 
-            with: (self perform: methodName) 
+            with: content 
             type: (ZnMimeType 
                 forFilenameExtension: fileRef extension 
                 ifAbsent: [ ZnMimeType applicationOctetStream ])) ].
@@ -206,13 +226,14 @@ ConduitTraitWebApp >> setModeFromPath: aPath [
     self setupDiskWatcher.
 ]
 
-{ #category : 'as yet unclassified' }
+{ #category : 'initialization' }
 ConduitTraitWebApp >> setupDiskWatcher [
     | templatesPath |
     templatesPath := rootPath / 'templates'.
-    templatesPath exists ifTrue: [
-        conduit := Conduit pointingAt: templatesPath pathString.
-        conduit start ].
+    templatesPath exists ifFalse: [ ^ self ].
+    
+    conduit := Conduit pointingAt: templatesPath pathString.
+    conduit start.
 ]
 
 { #category : 'public' }
@@ -223,7 +244,7 @@ ConduitTraitWebApp >> startOn: aPath [
     self startOn: aPath port: (port ifNil: [ 8081 ])
 ]
 
-{ #category : 'as yet unclassified' }
+{ #category : 'public' }
 ConduitTraitWebApp >> startOn: aPath port: aPortNumber [
     "Start the server on the specified port with optional disk path"
     
@@ -244,31 +265,28 @@ ConduitTraitWebApp >> startOn: aPath port: aPortNumber [
 
 { #category : 'accessing' }
 ConduitTraitWebApp >> stop [
-    "Gracefully stop the server and clean up resources"
-    
-    self stopServer.
-    self stopDiskWatcher.
-    self cleanupProcesses.
-    
-    Transcript show: 'Conduit server stopped.'; cr.
+	"Gracefully stop the server and clean up resources"
+
+	self stopServer.
+	self stopDiskWatcher.
+	self cleanupProcesses.
+
+	Transcript
+		show: 'Conduit server stopped.';
+		cr.
+	^ self
 ]
 
-{ #category : 'as yet unclassified' }
+{ #category : 'private' }
 ConduitTraitWebApp >> stopDiskWatcher [
     conduit ifNotNil: [ 
         conduit stop.
         conduit := nil ].
 ]
 
-{ #category : 'public' }
+{ #category : 'private' }
 ConduitTraitWebApp >> stopServer [
     server ifNotNil: [ 
         server stop.
         server := nil ].
-]
-
-{ #category : 'as yet unclassified' }
-ConduitTraitWebApp >> withHotReload [
-    "Ensure disk mode is active (kept for backward compatibility)"
-    ^ self
 ]

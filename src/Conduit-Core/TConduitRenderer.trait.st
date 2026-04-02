@@ -43,50 +43,59 @@ TConduitRenderer >> conduit [
 
 { #category : 'rendering' }
 TConduitRenderer >> renderPage: aPageName [
-	| viewData pageTemplate layoutTemplate renderedPage partials |
-	
-	"1. Prepare the data for the templates"
-	viewData := Dictionary new 
-		at: 'title' put: aPageName capitalized;
-		at: 'time' put: Time now print24;
-		yourself.
+    ^ self renderPage: aPageName context: Dictionary new
+]
 
-	"2. Fetch templates (Checks Disk first, then Frozen Methods)"
-	pageTemplate := self templateNamed: aPageName.
-	layoutTemplate := self templateNamed: 'layout'.
-
-	"3. Resolve all partials (for {{> navbar}} etc.)"
-	partials := self resolvePartials.
-
-	"4. Execute the render"
-	^ pageTemplate 
-		ifNotNil: [ 
-			renderedPage := pageTemplate value: viewData partials: partials.
-			
-			"Wrap in layout if it exists, otherwise return raw page"
-			layoutTemplate 
-				ifNotNil: [ 
-					viewData at: 'content' put: renderedPage.
-					layoutTemplate value: viewData partials: partials ]
-				ifNil: [ renderedPage ] 
-		]
-		ifNil: [ '<h1>404: Template not found</h1>' ]
+{ #category : 'rendering' }
+TConduitRenderer >> renderPage: aPageName context: aDictionary [
+    "Render a full page with the given context dictionary.
+     The context is merged with default values (title, time)."
+    
+    | viewData pageTemplate layoutTemplate renderedPage partials |
+    
+    "Merge passed context with defaults"
+    viewData := aDictionary copy
+        at: 'title' put: aPageName capitalized;
+        at: 'time' put: Time now print24;
+        yourself.
+    
+    "Fetch templates (checks Disk first, then Frozen Methods)"
+    pageTemplate := self templateNamed: aPageName.
+    layoutTemplate := self templateNamed: 'layout'.
+    
+    "Resolve all partials (for {{> navbar}} etc.)"
+    partials := self resolvePartials.
+    
+    "Execute the render"
+    ^ pageTemplate 
+        ifNotNil: [ 
+            renderedPage := pageTemplate value: viewData partials: partials.
+            
+            "Wrap in layout if it exists, otherwise return raw page"
+            layoutTemplate 
+                ifNotNil: [ 
+                    viewData at: 'content' put: renderedPage.
+                    layoutTemplate value: viewData partials: partials ]
+                ifNil: [ renderedPage ] 
+        ]
+        ifNil: [ '<h1>404: Template not found</h1>' ]
 ]
 
 { #category : 'template-resolution' }
 TConduitRenderer >> resolvePartials [
-	| dict |
+	| dict prefix |
 	"If Disk is active, use its registry" 
 	(self conduit notNil and: [ self conduit registry notEmpty ]) 
 		ifTrue: [ ^ self conduit registry ]. 
 
 	"Otherwise, rebuild from Frozen methods" 
+	prefix := 'frozenTemplate'.
 	dict := Dictionary new. 
-	(self class selectors select: [ :s | s beginsWith: 'frozenTemplate' ]) do: [ :sel | 
+	(self class selectors select: [ :s | s beginsWith: prefix ]) do: [ :sel | 
 		| key |
-		key := (sel copyFrom: 15 to: sel size) asLowercase.
+		key := (sel copyFrom: prefix size + 1 to: sel size) asLowercase.
 		dict at: key put: (MustacheTemplate on: (self perform: sel)) ]. 
-	^ dict 
+	^ dict
 ]
 
 { #category : 'accessing' }
