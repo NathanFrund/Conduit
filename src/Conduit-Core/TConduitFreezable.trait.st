@@ -72,7 +72,7 @@ TConduitFreezable classSide >> freeze: aPath [
     Transcript show: 'Freeze complete!'; cr.
 ]
 
-{ #category : 'as yet unclassified' }
+{ #category : 'actions' }
 TConduitFreezable classSide >> freezeAsset: aFileReference category: aCategory [
     | content methodName |
     content := aFileReference contents.
@@ -84,7 +84,7 @@ TConduitFreezable classSide >> freezeAsset: aFileReference category: aCategory [
     Transcript show: '  Frozen asset: ', aCategory, '/', aFileReference base; cr.
 ]
 
-{ #category : 'as yet unclassified' }
+{ #category : 'actions' }
 TConduitFreezable classSide >> freezeAssets: aPath [
     | root |
     root := aPath asFileReference.
@@ -100,7 +100,7 @@ TConduitFreezable classSide >> freezeAssets: aPath [
             self freezeAsset: file category: 'js' ] ].
 ]
 
-{ #category : 'as yet unclassified' }
+{ #category : 'actions' }
 TConduitFreezable classSide >> freezeCSS: aPath [
     | root |
     root := aPath asFileReference.
@@ -110,7 +110,7 @@ TConduitFreezable classSide >> freezeCSS: aPath [
     Transcript show: 'CSS assets frozen.'; cr.
 ]
 
-{ #category : 'as yet unclassified' }
+{ #category : 'actions' }
 TConduitFreezable classSide >> freezeJS: aPath [
     | root |
     root := aPath asFileReference.
@@ -120,7 +120,7 @@ TConduitFreezable classSide >> freezeJS: aPath [
     Transcript show: 'JS assets frozen.'; cr.
 ]
 
-{ #category : 'as yet unclassified' }
+{ #category : 'actions' }
 TConduitFreezable classSide >> freezeTemplates: aPath [
     | root |
     root := aPath asFileReference.

@@ -13,19 +13,26 @@ Class {
 ManifestConduitCore class >> ruleBadMessageRule2V1FalsePositive [
 
 	<ignoreForCoverage>
-	^ #(#(#(#RGMethodDefinition #(#ConduitWebAppDemo #resolvePartials #false)) #'2026-03-26T17:01:11.203836-04:00') #(#(#RGMethodDefinition #(#ConduitTraitWebApp #resolvePartials #false)) #'2026-04-02T10:20:16.146632-04:00') #(#(#RGMethodDefinition #(#ConduitTraitWebApp #serveFrozenAsset: #false)) #'2026-04-02T10:20:47.48714-04:00') #(#(#RGMethodDefinition #(#ConduitTraitWebApp #templateNamed: #false)) #'2026-04-02T10:21:17.837303-04:00') #(#(#RGMethodDefinition #(#TConduitRenderer #resolvePartials #false)) #'2026-04-02T10:26:44.416751-04:00') )
+	^ #(#(#(#RGClassDefinition #(#ConduitWebAppDemo)) #'2026-04-03T15:47:03.69275-04:00') #(#(#RGMethodDefinition #(#TConduitRenderer #templateNamed: #false)) #'2026-04-03T15:48:54.818245-04:00') #(#(#RGMethodDefinition #(#TConduitRenderer #resolvePartials #false)) #'2026-04-03T15:49:27.31964-04:00') )
 ]
 
 { #category : 'code-critics' }
-ManifestConduitCore class >> ruleCascadedNextPutAllsRuleV1FalsePositive [
+ManifestConduitCore class >> ruleLongMethodsRuleV1FalsePositive [
 
 	<ignoreForCoverage>
-	^ #(#(#(#RGMethodDefinition #(#ConduitTraitWebApp #serveFrozenAsset: #false)) #'2026-04-02T10:20:56.334068-04:00') #(#(#RGMethodDefinition #(#ConduitTraitWebApp #renderFragment:context: #false)) #'2026-04-02T10:23:31.146553-04:00') )
+	^ #(#(#(#RGMethodDefinition #(#'TConduitFreezable classTrait' #freeze: #true)) #'2026-04-03T15:47:52.209321-04:00') )
+]
+
+{ #category : 'code-critics' }
+ManifestConduitCore class >> ruleReCyclomaticComplexityRuleV1FalsePositive [
+
+	<ignoreForCoverage>
+	^ #(#(#(#RGMethodDefinition #(#'TConduitFreezable classTrait' #freeze: #true)) #'2026-04-03T15:47:48.135639-04:00') )
 ]
 
 { #category : 'code-critics' }
 ManifestConduitCore class >> ruleUncommonMessageSendRuleV1FalsePositive [
 
 	<ignoreForCoverage>
-	^ #(#(#(#RGMethodDefinition #(#ConduitTraitWebApp #configureRoutes #false)) #'2026-04-02T10:21:29.713394-04:00') #(#(#RGMethodDefinition #(#ConduitTraitWebApp #configureStaticAssets #false)) #'2026-04-02T10:21:42.417419-04:00') )
+	^ #(#(#(#RGClassDefinition #(#ConduitWebAppDemo)) #'2026-04-03T15:47:16.524355-04:00') )
 ]
