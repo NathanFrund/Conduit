@@ -13,7 +13,7 @@ Class {
 ManifestConduitCore class >> ruleBadMessageRule2V1FalsePositive [
 
 	<ignoreForCoverage>
-	^ #(#(#(#RGMethodDefinition #(#ConduitWebApp #resolvePartials #false)) #'2026-03-26T17:01:11.203836-04:00') #(#(#RGMethodDefinition #(#ConduitTraitWebApp #resolvePartials #false)) #'2026-04-02T10:20:16.146632-04:00') #(#(#RGMethodDefinition #(#ConduitTraitWebApp #serveFrozenAsset: #false)) #'2026-04-02T10:20:47.48714-04:00') #(#(#RGMethodDefinition #(#ConduitTraitWebApp #templateNamed: #false)) #'2026-04-02T10:21:17.837303-04:00') #(#(#RGMethodDefinition #(#TConduitRenderer #resolvePartials #false)) #'2026-04-02T10:26:44.416751-04:00') )
+	^ #(#(#(#RGMethodDefinition #(#ConduitWebAppDemo #resolvePartials #false)) #'2026-03-26T17:01:11.203836-04:00') #(#(#RGMethodDefinition #(#ConduitTraitWebApp #resolvePartials #false)) #'2026-04-02T10:20:16.146632-04:00') #(#(#RGMethodDefinition #(#ConduitTraitWebApp #serveFrozenAsset: #false)) #'2026-04-02T10:20:47.48714-04:00') #(#(#RGMethodDefinition #(#ConduitTraitWebApp #templateNamed: #false)) #'2026-04-02T10:21:17.837303-04:00') #(#(#RGMethodDefinition #(#TConduitRenderer #resolvePartials #false)) #'2026-04-02T10:26:44.416751-04:00') )
 ]
 
 { #category : 'code-critics' }

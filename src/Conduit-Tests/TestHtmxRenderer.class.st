@@ -15,7 +15,7 @@ TestHtmxRenderer >> conduit [
 	^ conduit
 ]
 
-{ #category : 'as yet unclassified' }
+{ #category : 'rendering' }
 TestHtmxRenderer >> frozenTemplateClicked_response [
     ^ '<span>Clicked at {{time}}</span>'
 ]

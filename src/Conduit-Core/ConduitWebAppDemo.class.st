@@ -12,19 +12,19 @@ Key Implementation Points:
 - #frozenTemplate*: These are generated methods that act as an internal virtual filesystem.
 
 Public API for the Demo:
-- ConduitWebApp freeze: aPath : Use this to ""freeze"" your HTML folder into the image.
-- ConduitWebApp unfreeze : Use this to ""wipe"" the frozen assets and return to a clean engine state.
+- ConduitWebAppDemo freeze: aPath : Use this to ""freeze"" your HTML folder into the image.
+- ConduitWebAppDemo unfreeze : Use this to ""wipe"" the frozen assets and return to a clean engine state.
 - #start / #stop : Controls the Teapot/Zinc server.
 
 Example:
     ""1. Development Mode (Live files)""
-    (ConduitWebApp new rootPath: '/Users/name/dev/shared') start.
+    (ConduitWebAppDemo new rootPath: '/Users/name/dev/shared') start.
 
     ""2. Production Mode (No files needed)""
-    ConduitWebApp new start.
+    ConduitWebAppDemo new start.
 "
 Class {
-	#name : 'ConduitWebApp',
+	#name : 'ConduitWebAppDemo',
 	#superclass : 'Object',
 	#instVars : [
 		'teapot',
@@ -37,7 +37,7 @@ Class {
 }
 
 { #category : 'actions' }
-ConduitWebApp class >> freeze: aPath [
+ConduitWebAppDemo class >> freeze: aPath [
 	| folder |
 	folder := aPath asFileReference.
 
@@ -55,7 +55,7 @@ ConduitWebApp class >> freeze: aPath [
 ]
 
 { #category : 'public' }
-ConduitWebApp class >> startOn: aPath [
+ConduitWebAppDemo class >> startOn: aPath [
 
 	| instance |
 	instance := self new.
@@ -66,7 +66,7 @@ ConduitWebApp class >> startOn: aPath [
 ]
 
 { #category : 'actions' }
-ConduitWebApp class >> unfreeze [
+ConduitWebAppDemo class >> unfreeze [
     | count |
     count := 0.
     "Only target our new official prefix"
@@ -81,12 +81,12 @@ ConduitWebApp class >> unfreeze [
 ]
 
 { #category : 'accessing' }
-ConduitWebApp >> conduit [
+ConduitWebAppDemo >> conduit [
 	^ conduit
 ]
 
 { #category : 'rendering' }
-ConduitWebApp >> renderPage: aPageName [
+ConduitWebAppDemo >> renderPage: aPageName [
     | viewData pageTemplate layoutTemplate renderedPage partials |
     
     "1. Prepare the data for the templates"
@@ -119,7 +119,7 @@ ConduitWebApp >> renderPage: aPageName [
 ]
 
 { #category : 'template-resolution' }
-ConduitWebApp >> resolvePartials [
+ConduitWebAppDemo >> resolvePartials [
     | dict |
     "If Disk is active, use its registry"
     (conduit notNil and: [ conduit registry notEmpty ]) ifTrue: [ ^ conduit registry ].
@@ -135,18 +135,18 @@ ConduitWebApp >> resolvePartials [
 ]
 
 { #category : 'accessing' }
-ConduitWebApp >> rootPath [
+ConduitWebAppDemo >> rootPath [
 	^ rootPath 
 ]
 
 { #category : 'accessing' }
-ConduitWebApp >> rootPath: aPath [
+ConduitWebAppDemo >> rootPath: aPath [
     "Only convert to a FileReference if we actually have a path"
     rootPath := aPath ifNotNil: [ aPath asFileReference ].
 ]
 
 { #category : 'initialization' }
-ConduitWebApp >> setupRoutes [
+ConduitWebAppDemo >> setupRoutes [
 	"1. The Root Redirect"
     teapot GET: '/' -> [ TeaResponse redirect location: '/index'; yourself ].
 
@@ -160,7 +160,7 @@ ConduitWebApp >> setupRoutes [
 ]
 
 { #category : 'control' }
-ConduitWebApp >> start [
+ConduitWebAppDemo >> start [
     self stop.
     
     "1. Initialize Conduit only if we have a path (Development Mode)"
@@ -183,7 +183,7 @@ ConduitWebApp >> start [
 ]
 
 { #category : 'control' }
-ConduitWebApp >> stop [
+ConduitWebAppDemo >> stop [
 
 	teapot ifNotNil: [ teapot stop. teapot := nil ].
 	conduit ifNotNil: [ conduit stop. conduit := nil ].
@@ -192,7 +192,7 @@ ConduitWebApp >> stop [
 ]
 
 { #category : 'accessing' }
-ConduitWebApp >> templateNamed: aName [
+ConduitWebAppDemo >> templateNamed: aName [
     | methodName |
     methodName := ('frozenTemplate' , aName capitalized) asSymbol.
     
