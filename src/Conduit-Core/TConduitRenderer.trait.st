@@ -48,37 +48,32 @@ TConduitRenderer >> renderPage: aPageName [
 
 { #category : 'rendering' }
 TConduitRenderer >> renderPage: aPageName context: aDictionary [
-    "Render a full page with the given context dictionary.
-     The context is merged with default values (title, time)."
+    "Render a page with the default layout"
+    ^ self renderPage: aPageName layout: 'layout' context: aDictionary
+]
+
+{ #category : 'rendering' }
+TConduitRenderer >> renderPage: aPageName layout: aLayoutName context: aDictionary [
+    "Render a page with a specific layout"
     
-    | viewData pageTemplate layoutTemplate renderedPage partials |
+    | pageTemplate layoutTemplate partials renderedPage |
     
-    "Merge passed context with defaults"
-    viewData := aDictionary copy
-        at: 'title' put: aPageName capitalized;
-        at: 'time' put: Time now print24;
-        yourself.
-    
-    "Fetch templates (checks Disk first, then Frozen Methods)"
     pageTemplate := self templateNamed: aPageName.
-    layoutTemplate := self templateNamed: 'layout'.
-    
-    "Resolve all partials (for {{> navbar}} etc.)"
+    layoutTemplate := self templateNamed: aLayoutName.
     partials := self resolvePartials.
     
-    "Execute the render"
-    ^ pageTemplate 
-        ifNotNil: [ 
-            renderedPage := pageTemplate value: viewData partials: partials.
-            
-            "Wrap in layout if it exists, otherwise return raw page"
-            layoutTemplate 
-                ifNotNil: [ 
-                    viewData at: 'content' put: renderedPage.
-                    layoutTemplate value: viewData partials: partials ]
-                ifNil: [ renderedPage ] 
-        ]
-        ifNil: [ '<h1>404: Template not found</h1>' ]
+    renderedPage := pageTemplate 
+        ifNotNil: [ pageTemplate value: aDictionary partials: partials ]
+        ifNil: [ '<h1>404: Template not found</h1>' ].
+    
+    layoutTemplate ifNotNil: [
+        | layoutContext |
+        layoutContext := aDictionary copy
+            at: 'content' put: renderedPage;
+            yourself.
+        ^ layoutTemplate value: layoutContext partials: partials ].
+    
+    ^ renderedPage
 ]
 
 { #category : 'template-resolution' }

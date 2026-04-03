@@ -106,13 +106,14 @@ ConduitTraitWebApp >> conduit [
 
 { #category : 'routing' }
 ConduitTraitWebApp >> configureRoutes [
-<noCritique>
-    server GET: '/' -> [ self renderPage: 'index' ].
+    server GET: '/' -> [ self renderPage: 'index' context: { 'time' -> Time now print24 } asDictionary].
     server GET: '/clicked' -> [ :req |
         self render: 'clicked_response' request: req 
             context: { ('time' -> Time now print24) } asDictionary ].
     server GET: '/<page>' -> [ :req | 
-        self renderPage: (req at: #page) ].
+        | page |
+        page := req at: #page.
+        self renderPage: page layout: (self layoutForPage: page) context: Dictionary new ].
 ]
 
 { #category : 'routing' }
@@ -156,6 +157,12 @@ ConduitTraitWebApp >> initialize [
     
     super initialize.
     port := 8081.
+]
+
+{ #category : 'accessing' }
+ConduitTraitWebApp >> layoutForPage: aPageName [
+    "Return the layout name for this page. Subclasses override."
+    ^ 'layout'
 ]
 
 { #category : 'accessing' }
