@@ -95,16 +95,17 @@ TConduitRenderer >> resolvePartials [
 
 { #category : 'accessing' }
 TConduitRenderer >> templateNamed: aName [
-    | methodName |
-    methodName := ('frozenTemplate' , aName capitalized) asSymbol.
+	| methodName |
+	methodName := ('frozenTemplate' , aName capitalized) asSymbol.
 
-    "1. Check Disk (Via the conduit method, not a variable)"
-    (self conduit notNil and: [ self conduit registry includesKey: aName ])
-        ifTrue: [ ^ self conduit registry at: aName ].
+	"1. Proactive Disk Check: Only if we are in development mode"
+	self conduit ifNotNil: [ :c | 
+		c syncIfNeeded. "The Conduit handles the 500ms throttle internally"
+		(c registry includesKey: aName) ifTrue: [ ^ c registry at: aName ] ].
 
-    "2. Check Image (Frozen Methods)"
-    (self respondsTo: methodName)
-        ifTrue: [ ^ MustacheTemplate on: (self perform: methodName) ].
+	"2. Image Fallback: The 'Frozen' methods"
+	(self respondsTo: methodName)
+		ifTrue: [ ^ MustacheTemplate on: (self perform: methodName) ].
 
-    ^ nil
+	^ nil
 ]

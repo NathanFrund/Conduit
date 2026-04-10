@@ -99,25 +99,29 @@ Conduit >> stop [
 
 { #category : 'updating' }
 Conduit >> syncFiles [
-	| currentFiles diskNames |
-	"Find all files that match our registered extensions"
-	currentFiles := rootFolder allFiles select: [ :f | processors includesKey: f extension ].
-	diskNames := currentFiles collect: [ :f | f basenameWithoutExtension ].
-	
-	"Add/Update files"
-	currentFiles do: [ :file |
-		(file modificationTime > lastCheck ) ifTrue: [ 
-			| processor |
-			processor := processors at: file extension.
-			registry at: file basenameWithoutExtension put: (processor value: file contents).
-		].
-	].
-
-	"Remove files that were deleted from disk"
-	(registry keys copy) do: [ :key |
-		(diskNames includes: key) ifFalse: [ registry removeKey: key ] ].
-	
-	lastCheck := DateAndTime now.
+    | currentFiles diskNames |
+    currentFiles := rootFolder allFiles select: [ :f | processors includesKey: f extension ].
+    diskNames := currentFiles collect: [ :f | f basenameWithoutExtension ].
+    
+    "Add/Update files - use >= to catch changes in same second"
+    currentFiles do: [ :file |
+        (file modificationTime >= lastCheck) ifTrue: [ 
+            | processor |
+            processor := processors at: file extension.
+            registry at: file basenameWithoutExtension put: (processor value: file contents) ] ].
+    
+    "Remove files that were deleted"
+    (registry keys copy) do: [ :key |
+        (diskNames includes: key) ifFalse: [ registry removeKey: key ] ].
+    
+    lastCheck := DateAndTime now.
 	
 
+]
+
+{ #category : 'as yet unclassified' }
+Conduit >> syncIfNeeded [
+    "Only sync if more than 500ms have passed since last check"
+    (DateAndTime now - lastCheck) > 500 milliSeconds ifTrue: [ 
+        self syncFiles ]
 ]
