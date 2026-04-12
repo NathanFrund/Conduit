@@ -41,7 +41,7 @@ Class {
 Conduit class >> pointingAt: aPathString [
 	^ self new
 		rootFolder: aPathString asFileReference;
-		yourself 
+		yourself
 ]
 
 { #category : 'initialization' }
@@ -99,22 +99,22 @@ Conduit >> stop [
 
 { #category : 'updating' }
 Conduit >> syncFiles [
-    | currentFiles diskNames |
-    currentFiles := rootFolder allFiles select: [ :f | processors includesKey: f extension ].
-    diskNames := currentFiles collect: [ :f | f basenameWithoutExtension ].
+    | currentFiles diskNames startOfSync |
+    startOfSync := DateAndTime now. 
     
-    "Add/Update files - use >= to catch changes in same second"
+    currentFiles := rootFolder allFiles select: [ :f | processors includesKey: f extension ]. 
+    diskNames := currentFiles collect: [ :f | f basenameWithoutExtension ].
+
     currentFiles do: [ :file |
         (file modificationTime >= lastCheck) ifTrue: [ 
             | processor |
-            processor := processors at: file extension.
-            registry at: file basenameWithoutExtension put: (processor value: file contents) ] ].
-    
-    "Remove files that were deleted"
-    (registry keys copy) do: [ :key |
-        (diskNames includes: key) ifFalse: [ registry removeKey: key ] ].
-    
-    lastCheck := DateAndTime now.
+            processor := processors at: file extension. 
+            registry at: file basenameWithoutExtension put: (processor value: file contents) ] ]. 
+
+    (registry keys copy) do: [ :key | 
+        (diskNames includes: key) ifFalse: [ registry removeKey: key ] ]. 
+        
+    lastCheck := startOfSync - 1 second. "The overlap fix"
 	
 
 ]

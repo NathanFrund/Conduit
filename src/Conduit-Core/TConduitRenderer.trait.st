@@ -100,7 +100,7 @@ TConduitRenderer >> templateNamed: aName [
 
 	"1. Proactive Disk Check: Only if we are in development mode"
 	self conduit ifNotNil: [ :c | 
-		c syncIfNeeded. "The Conduit handles the 500ms throttle internally"
+		c syncIfNeeded.
 		(c registry includesKey: aName) ifTrue: [ ^ c registry at: aName ] ].
 
 	"2. Image Fallback: The 'Frozen' methods"
