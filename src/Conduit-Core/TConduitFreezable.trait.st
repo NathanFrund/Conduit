@@ -29,6 +29,11 @@ Trait {
 }
 
 { #category : 'actions' }
+TConduitFreezable classSide >> freezableTemplateExtensions [
+    ^ #('mustache' 'html')
+]
+
+{ #category : 'actions' }
 TConduitFreezable classSide >> freeze: aPath [
     | root |
     root := aPath asFileReference.
