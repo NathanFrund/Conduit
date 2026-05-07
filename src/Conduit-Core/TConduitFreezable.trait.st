@@ -122,15 +122,15 @@ TConduitFreezable classSide >> freezeJS: aPath [
 
 { #category : 'actions' }
 TConduitFreezable classSide >> freezeTemplates: aPath [
-    | root templatesDir |
+    | root allowedExtensions |
     root := aPath asFileReference.
-    templatesDir := root / 'templates'.
-    templatesDir exists ifFalse: [ ^ self ].
+    root exists ifFalse: [ ^ self ].
+    allowedExtensions := self freezableTemplateExtensions .
 
-    templatesDir allFiles do: [ :file |
-        file isFile ifTrue: [
+    root allFiles do: [ :file |
+        (file isFile and: [ allowedExtensions includes: file extension ]) ifTrue: [
             | relativePath escapedPath methodName content |
-            relativePath := ((file relativeTo: templatesDir) pathString copyUpToLast: $.) asLowercase.
+            relativePath := ((file relativeTo: root) pathString copyUpToLast: $.) asLowercase.
             content := file contents.
             escapedPath := Conduit escapePathForSelector: relativePath.
             methodName := String streamContents: [ :s |

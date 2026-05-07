@@ -58,7 +58,7 @@ ConduitWebAppDemo >> conduit [
 ConduitWebAppDemo >> handleRequest: request [
     | path |
     path := request uri pathPrintString.
-    path = '/' ifTrue: [ ^ ZnResponse redirect: '/index' ].
+    path = '/' ifTrue: [ ^ ZnResponse redirect: '/templates/index' ].
     path = '/clicked' ifTrue: [
         ^ ZnResponse ok: (ZnEntity html: '<span>Content swapped successfully by <b>htmx</b> and <b>Pharo</b>!!</span>') ].
     ^ self respondWithPage: (path copyWithoutFirst: $/).
@@ -89,7 +89,7 @@ ConduitWebAppDemo >> renderPage: aPageName [
         ifNil: [ '<h1>404: Template not found</h1>' ].
 ]
 
-{ #category : 'as yet unclassified' }
+{ #category : 'request handling' }
 ConduitWebAppDemo >> respondWithPage: aPageName [
     | html |
     html := self renderPage: aPageName.
