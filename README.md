@@ -3,16 +3,14 @@
 Conduit is an **Asset Resolution Layer** that provides:
 
 1. **Dynamic Resolution**: Fallback logic between FileSystem and Compiled Methods.
-2. **Persistence**: The ability to "freeze" external assets into the Pharo image.
-3. **Framework Agnosticism**: A Trait-based API that works with Teapot, Zinc, or Seaside.
+2. **Persistence**: The ability to “freeze” external assets into the Pharo image.
+3. **Framework Agnosticism**: A Trait‑based API that works with Zinc, Teapot, or any HTTP server.
 
-By leveraging Smalltalk **Traits**, Conduit allows you to inject web-rendering and asset-freezing capabilities into any class, making it framework-agnostic and highly modular.
+By leveraging Smalltalk **Traits**, Conduit allows you to inject web‑rendering and asset‑freezing capabilities into any class, making it framework‑agnostic and highly modular.
 
 ## Installation
 
-To install Conduit in a fresh Pharo image, execute the following Metacello script. Note that *Teapot* is expected to be present in your Pharo environment.
-
-*Mustache* will be loaded automatically as a dependency.
+Mustache is loaded automatically as a dependency. No Teapot or other server is required — Conduit works with plain Zinc out of the box.
 
 ```smalltalk
 Metacello new
@@ -21,112 +19,116 @@ Metacello new
     load.
 ```
 
-## 🚀 Quick Start
-
-Once you have composed your class with the Conduit traits, you can spin up the server in two modes:
-
-### 1. Live Development Mode
-
-Point the engine to your local directory. Changes to `.mustache` files on your disk will reflect instantly in the browser.
+To load the test suite as well:
 
 ```smalltalk
-app := ConduitTraitWebApp new.
-app startOn: '/Users/name/Projects/my-web-assets'.
+Metacello new
+    baseline: 'Conduit';
+    repository: 'github://NathanFrund/Conduit:main/src';
+    load: 'Tests'.
 ```
 
-### 2. Frozen / Production Mode
+## Quick Start / Demo
 
-If you have already run `freeze:`, you can start the app without a local path. It will serve templates directly from the compiled Smalltalk methods.
+The repo includes `ConduitWebAppDemo`, a compact example that uses **only Zinc** and the Conduit traits.
 
 ```smalltalk
-app := ConduitTraitWebApp new.
-app startOn: nil.
+"Start the demo in disk mode – templates are hot‑reloaded"
+demo := ConduitWebAppDemo new.
+demo rootPath: '/path/to/my-templates'.
+demo start.
 ```
 
-## 🏗 Trait-Based Architecture
+Open `http://localhost:8080/index` in your browser.  
+Changes to `.mustache` files are reflected immediately — no restart needed.
 
-Conduit has been refactored from a monolithic class into a modular Trait system. This allows you to "plug in" hybrid-state capabilities to any object, including Seaside components or Zinc delegates.
+**Freeze the templates into the image** (after stopping the server)
 
-### The Composition
+```smalltalk
+ConduitWebAppDemo freezeTemplates: '/path/to/my-templates'.
+```
 
-To create a Conduit-powered app, compose your class as follows:
+**Restart in frozen mode (no disk)**
 
-| Side | Trait | Responsibility |
-|:---|:---|:---|
-| **Instance** | `TConduitRenderer` + `THtmxRenderer` | Template resolution, HTMX support, page rendering |
-| **Class** | `TConduitFreezable` | `freeze:` and `unfreeze` actions |
+```smalltalk
+demo2 := ConduitWebAppDemo new.
+demo2 start.
+```
 
-### The Developer Contract
-
-To satisfy the traits, your application class must implement the following:
-
-| Requirement | Description | Implementation |
-| :--- | :--- | :--- |
-| **`conduit`** | A method returning the `Conduit` engine instance. | `^ conduit` |
-| **`server` slot** | A slot to hold your HTTP server (e.g., Teapot). | Defined in class slots. |
-| **`rootPath` slot** | A slot to store the `FileReference` for live mode. | Defined in class slots. |
+The same pages are served from compiled Smalltalk methods.  
+Later, `ConduitWebAppDemo unfreeze` removes all frozen methods.
 
 ---
 
-## How It Works: The Hybrid-State Logic
+## Architecture
 
-The core value of Conduit is its ability to resolve templates across different storage mediums using a prioritized fallback:
+Conduit is a set of **Traits** that you compose into your own application class.
 
-1. **Disk Priority**: The engine first checks the `conduit` registry for a live file on disk.
-2. **Image Fallback**: If the disk is unavailable or the file is missing, it looks for a method named `frozenTemplate<Name>` on the instance side.
-3. **Layout Wrapping**: It automatically looks for a `layout` template. If found, it wraps the page content within it using the `{{{content}}}` placeholder.
-4. **Partial Injection**: It scans all selectors beginning with `frozenTemplate` to automatically resolve Mustache partials (e.g., `{{> navbar}}`).
+| Side | Trait | Responsibility |
+| :--- | :--- | :--- |
+| **Instance** | `TConduitRenderer` + `THtmxRenderer` | Template resolution, HTMX detection, page rendering |
+| **Class** | `TConduitFreezable` | Freezing and unfreezing templates |
+
+Your class must provide a `conduit` accessor (returning a `Conduit` instance or `nil` in frozen mode), and implement the server‑lifecycle methods (`start`/`stop`). The traits supply `templateNamed:`, `resolvePartials`, `freezeTemplates:`, and `unfreeze`.
+
+---
+
+## Template Resolution (Path‑Based)
+
+Conduit maps the directory structure under the root folder directly to template names.  
+A file at `partials/register_form.mustache` becomes the template key `'partials/register_form'`.
+
+Underscores in filenames (`_`) are preserved through the freeze/thaw cycle using a reversible escaping convention (double underscore `__` in method selectors).  
+You never need to worry about it — the framework handles it transparently.
 
 ---
 
 ## Freezing for Production
 
-You can "bake" your external HTML files and assets (CSS/JS) into the Pharo image so the app can run as a standalone binary without any external dependencies:
+You can “bake” your templates into the image so the app runs without any external files.
 
 ```smalltalk
-"Bake all templates and assets into the class"
-ConduitTraitWebApp freeze: '/path/to/shared'.
+"Freeze templates only (defaults to .mustache and .html files)"
+ConduitWebAppDemo freezeTemplates: '/path/to/templates'.
 
-"Clean them out later if needed"
-ConduitTraitWebApp unfreeze.
+"Optional: also freeze CSS/JS assets using dedicated helpers"
+ConduitWebAppDemo freezeCSS: '/path/to/assets'.
+ConduitWebAppDemo freezeJS: '/path/to/assets'.
 ```
 
-- **`freeze:`** Scans the directory and compiles each `.mustache` file as a method prefixed with `frozenTemplate`, and each asset (CSS/JS) as `frozenAsset*` methods.
-- **`unfreeze`**: Removes all `frozenTemplate*` and `frozenAsset*` methods from the instance side.
+- **`freezeTemplates:`** walks the entire directory tree and compiles every `.mustache`/`.html` file as an instance‑side method prefixed with `frozenTemplate`.  
+  The list of frozen extensions is controlled by the class‑side method `freezableTemplateExtensions` (default: `#('mustache' 'html')`).
 
-> **Note:** The directory structure expected by `freeze:` should contain:
-> ```
-> shared/
-> ├── templates/    (.mustache files)
-> ├── css/          (.css files)
-> └── js/           (.js files)
-> ```
+- **`freezeCSS:` / `freezeJS:`** are separate, optional helpers for static assets. They do **not** interfere with template resolution.
+
+- **`unfreeze`** removes all `frozenTemplate*` methods. Frozen assets are removed separately.
 
 ---
 
-## Example Implementation: `ConduitTraitWebApp`
+## Example Implementation: `ConduitWebAppDemo`
 
-The included `ConduitTraitWebApp` serves as a reference implementation. It demonstrates how to initialize the `server` (Teapot) and map routes to the `renderPage:` method provided by the traits.
+`ConduitWebAppDemo` is a pure‑Zinc reference that implements the full Conduit workflow.
 
 ```smalltalk
-"Example Route Mapping"
-server GET: '/' -> [ self renderPage: 'index' ].
-server GET: '/clicked' -> [ :req |
-    self render: 'clicked_response' request: req 
-        context: { ('time' -> Time now print24) } asDictionary ].
-server GET: '/<page>' -> [ :req | 
-    self renderPage: (req at: #page) ].
+"Class definition – composes the traits"
+Object << #ConduitWebAppDemo
+    traits: { TConduitRenderer. TConduitFreezable }
+    slots: { #server . #conduit . #rootPath };
+    tag: 'Base';
+    package: 'Conduit-Core'
 ```
+
+Routes are handled in `handleRequest:`; `renderPage:` uses the traits to fetch templates, resolve partials, and wrap content in the optional `layout` template.
 
 ---
 
 ## Testing
 
-Conduit includes a full test suite. To run the tests:
+Conduit includes a full test suite covering the disk registry, frozen‑method resolution, HTMX detection, and the escaping round‑trip.
 
 ```smalltalk
 TestRunner open.
-"Select the Conduit-Tests package"
+"Select the Conduit‑Tests package"
 ```
 
 ---
