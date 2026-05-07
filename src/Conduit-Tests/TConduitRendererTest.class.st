@@ -28,6 +28,25 @@ TConduitRendererTest >> testResolvePartialsBuildsFromFrozenMethods [
 ]
 
 { #category : 'tests' }
+TConduitRendererTest >> testResolvePartialsWithEscapedUnderscore [
+    "Verify that resolvePartials correctly un-escapes frozen method selectors
+     containing double underscores back into path keys with single underscores."
+    | renderer partials |
+    renderer := TestRenderer new.
+    renderer conduit: nil.
+
+    "Add a frozen method on the instance side, following the escaping convention"
+    TestRenderer compile: 'frozenTemplatepartials_register__form ^ ''<div class="error">{{error}}</div>'''.
+
+    partials := renderer resolvePartials.
+    self assert: (partials includesKey: 'partials/register_form').
+    self assert: (partials includesKey: 'index').   "pre‑existing frozen method still works"
+
+    "Clean up"
+    TestRenderer removeSelector: #frozenTemplatepartials_register__form.
+]
+
+{ #category : 'tests' }
 TConduitRendererTest >> testTemplateNamedFindsFrozenMethod [
     | renderer |
     renderer := TestRenderer new.

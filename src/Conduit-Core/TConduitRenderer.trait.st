@@ -78,34 +78,30 @@ TConduitRenderer >> renderPage: aPageName layout: aLayoutName context: aDictiona
 
 { #category : 'template-resolution' }
 TConduitRenderer >> resolvePartials [
-	| dict prefix |
-	"If Disk is active, use its registry" 
-	(self conduit notNil and: [ self conduit registry notEmpty ]) 
-		ifTrue: [ ^ self conduit registry ]. 
+    | dict prefix |
+    (self conduit notNil and: [ self conduit registry notEmpty ])
+        ifTrue: [ ^ self conduit registry ].
 
-	"Otherwise, rebuild from Frozen methods" 
-	prefix := 'frozenTemplate'.
-	dict := Dictionary new. 
-	(self class selectors select: [ :s | s beginsWith: prefix ]) do: [ :sel | 
-		| key |
-		key := (sel copyFrom: prefix size + 1 to: sel size) asLowercase.
-		dict at: key put: (MustacheTemplate on: (self perform: sel)) ]. 
-	^ dict
+    prefix := 'frozenTemplate'.
+    dict := Dictionary new.
+    (self class selectors select: [ :s | s beginsWith: prefix ]) do: [ :sel |
+        | key |
+        key := Conduit unescapeSelectorToPath: (sel copyFrom: prefix size + 1 to: sel size).
+        dict at: key put: (MustacheTemplate on: (self perform: sel)) ].
+    ^ dict
 ]
 
 { #category : 'accessing' }
 TConduitRenderer >> templateNamed: aName [
-	| methodName |
-	methodName := ('frozenTemplate' , aName capitalized) asSymbol.
+    | methodName |
+    "1. Disk check (development mode)"
+    self conduit ifNotNil: [ :c |
+        c syncIfNeeded.
+        (c registry includesKey: aName asLowercase) ifTrue: [ ^ c registry at: aName asLowercase ] ].
 
-	"1. Proactive Disk Check: Only if we are in development mode"
-	self conduit ifNotNil: [ :c | 
-		c syncIfNeeded.
-		(c registry includesKey: aName) ifTrue: [ ^ c registry at: aName ] ].
-
-	"2. Image Fallback: The 'Frozen' methods"
-	(self respondsTo: methodName)
-		ifTrue: [ ^ MustacheTemplate on: (self perform: methodName) ].
-
-	^ nil
+    "2. Image fallback (frozen methods)"
+    methodName := ('frozenTemplate' , (Conduit escapePathForSelector: aName)) asSymbol.
+    (self respondsTo: methodName)
+        ifTrue: [ ^ MustacheTemplate on: (self perform: methodName) ].
+    ^ nil
 ]

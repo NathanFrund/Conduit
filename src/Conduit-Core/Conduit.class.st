@@ -37,11 +37,31 @@ Class {
 	#tag : 'Base'
 }
 
+{ #category : 'as yet unclassified' }
+Conduit class >> escapePathForSelector: aRelativePathString [
+    | escaped |
+    escaped := aRelativePathString asLowercase.
+    escaped := escaped copyReplaceAll: '_' with: '__'.
+    escaped := escaped copyReplaceAll: '/' with: '_'.
+    ^ escaped
+]
+
 { #category : 'accessing' }
 Conduit class >> pointingAt: aPathString [
 	^ self new
 		rootFolder: aPathString asFileReference;
 		yourself
+]
+
+{ #category : 'as yet unclassified' }
+Conduit class >> unescapeSelectorToPath: aSelectorString [
+    "Reverse‑escape a frozen‑method selector extent back into a file‑system key."
+    | unescaped |
+    unescaped := aSelectorString.
+    unescaped := unescaped copyReplaceAll: '__' with: '$$'.
+    unescaped := unescaped copyReplaceAll: '_' with: '/'.
+    unescaped := unescaped copyReplaceAll: '$$' with: '_'.
+    ^ unescaped
 ]
 
 { #category : 'initialization' }
@@ -99,22 +119,27 @@ Conduit >> stop [
 
 { #category : 'updating' }
 Conduit >> syncFiles [
-    | currentFiles diskNames startOfSync |
-    startOfSync := DateAndTime now. 
-    
-    currentFiles := rootFolder allFiles select: [ :f | processors includesKey: f extension ]. 
-    diskNames := currentFiles collect: [ :f | f basenameWithoutExtension ].
+    | currentFiles startOfSync diskNames |
+    startOfSync := DateAndTime now.
+    currentFiles := rootFolder allFiles select: [ :f | processors includesKey: f extension ].
 
+    "Compute relative paths (lowercased, without extension) for every file"
+    diskNames := currentFiles collect: [ :f |
+        ((f relativeTo: rootFolder) pathString copyUpToLast: $.) asLowercase ].
+
+    "Add or update entries in the registry"
     currentFiles do: [ :file |
-        (file modificationTime >= lastCheck) ifTrue: [ 
-            | processor |
-            processor := processors at: file extension. 
-            registry at: file basenameWithoutExtension put: (processor value: file contents) ] ]. 
+        (file modificationTime >= lastCheck) ifTrue: [
+            | processor relativePath |
+            processor := processors at: file extension.
+            relativePath := ((file relativeTo: rootFolder) pathString copyUpToLast: $.) asLowercase.
+            registry at: relativePath put: (processor value: file contents) ] ].
 
-    (registry keys copy) do: [ :key | 
-        (diskNames includes: key) ifFalse: [ registry removeKey: key ] ]. 
-        
-    lastCheck := startOfSync - 1 second. "The overlap fix"
+    "Remove keys that no longer exist on disk"
+    (registry keys copy) do: [ :key |
+        (diskNames includes: key) ifFalse: [ registry removeKey: key ] ].
+
+    lastCheck := startOfSync - 1 second. "Overlap fix"
 	
 
 ]

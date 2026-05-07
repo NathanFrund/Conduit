@@ -43,13 +43,6 @@ THtmxRenderer >> isHtmxRequest: aRequest [
 
     isHtmx := (aRequest headers at: 'HX-Request' ifAbsent: [ 'false' ]) = 'true'.
 
-    Transcript
-        nextPutAll: '[HTMX Check] Path: ';
-        nextPutAll: aRequest url asString;
-        nextPutAll: ' | Is HTMX? ';
-        nextPutAll: isHtmx asString;
-        cr.
-
     ^ isHtmx
 ]
 
@@ -71,7 +64,6 @@ THtmxRenderer >> renderFragment: aTemplateName context: aDictionary [
     "2. Look up the specific template by name"
     "We use asLowercase to match your resolvePartials logic"
     targetTemplate := templateRegistry at: aTemplateName asLowercase ifAbsent: [ 
-        Transcript show: 'HTMX Error: Template [', aTemplateName, '] not found in Registry'; cr.
         ^ '<h1>404: Template Not Found</h1><p>The registry does not contain: ', aTemplateName, '</p>' ].
     
     "3. Render the template (which is already a MustacheTemplate object)"

@@ -21,11 +21,11 @@ TestRenderer >> conduit: anObject [
 ]
 
 { #category : 'frozen-templates' }
-TestRenderer >> frozenTemplateIndex [
+TestRenderer >> frozenTemplateindex [
     ^ '<h1>Hello</h1>'
 ]
 
 { #category : 'frozen-templates' }
-TestRenderer >> frozenTemplateLayout [
+TestRenderer >> frozenTemplatelayout [
     ^ '<html>{{content}}</html>'
 ]

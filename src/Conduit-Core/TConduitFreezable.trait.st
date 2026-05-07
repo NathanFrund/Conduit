@@ -122,22 +122,24 @@ TConduitFreezable classSide >> freezeJS: aPath [
 
 { #category : 'actions' }
 TConduitFreezable classSide >> freezeTemplates: aPath [
-    | root |
+    | root templatesDir |
     root := aPath asFileReference.
-    
-    (root / 'templates') exists ifFalse: [ 
-        Transcript show: 'No templates directory found.'; cr.
-        ^ self ].
-    
-    (root / 'templates') children select: [ :each | each isFile ] thenDo: [ :file |
-        | content methodName |
-        content := file contents.
-        methodName := 'frozenTemplate', file base capitalized.
-        self instanceSide compile: (String streamContents: [ :s |
-            s nextPutAll: methodName; cr.
-            s nextPutAll: '    ^ '; nextPutAll: content asString printString ])
-        classified: 'frozen-templates'.
-        Transcript show: '  Frozen template: ', file base; cr ].
+    templatesDir := root / 'templates'.
+    templatesDir exists ifFalse: [ ^ self ].
+
+    templatesDir allFiles do: [ :file |
+        file isFile ifTrue: [
+            | relativePath escapedPath methodName content |
+            relativePath := ((file relativeTo: templatesDir) pathString copyUpToLast: $.) asLowercase.
+            content := file contents.
+            escapedPath := Conduit escapePathForSelector: relativePath.
+            methodName := String streamContents: [ :s |
+                s nextPutAll: 'frozenTemplate'; nextPutAll: escapedPath ].
+            
+            self instanceSide compile: (String streamContents: [ :s |
+                s nextPutAll: methodName; cr;
+                  nextPutAll: '    ^ '; nextPutAll: content asString printString ])
+            classified: 'frozen-templates' ] ].
 ]
 
 { #category : 'actions' }

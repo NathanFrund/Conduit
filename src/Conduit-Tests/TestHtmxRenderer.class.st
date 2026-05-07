@@ -16,7 +16,7 @@ TestHtmxRenderer >> conduit [
 ]
 
 { #category : 'rendering' }
-TestHtmxRenderer >> frozenTemplateClicked_response [
+TestHtmxRenderer >> frozenTemplateclicked__response [
     ^ '<span>Clicked at {{time}}</span>'
 ]
 
