@@ -42,14 +42,22 @@ TConduitRenderer >> conduit [
 ]
 
 { #category : 'rendering' }
+TConduitRenderer >> layoutNameForPage: aPageName [
+    | pageLayout |
+    pageLayout := aPageName , '_layout'.
+    (self templateNamed: pageLayout) ifNotNil: [ ^ pageLayout ].
+    ^ 'layout'
+]
+
+{ #category : 'rendering' }
 TConduitRenderer >> renderPage: aPageName [
     ^ self renderPage: aPageName context: Dictionary new
 ]
 
 { #category : 'rendering' }
 TConduitRenderer >> renderPage: aPageName context: aDictionary [
-    "Render a page with the default layout"
-    ^ self renderPage: aPageName layout: 'layout' context: aDictionary
+    "Render a page with a page‑specific layout if one exists, otherwise the default."
+    ^ self renderPage: aPageName layout: (self layoutNameForPage: aPageName) context: aDictionary
 ]
 
 { #category : 'rendering' }
