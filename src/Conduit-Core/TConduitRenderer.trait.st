@@ -36,6 +36,25 @@ Trait {
 	#tag : 'Base'
 }
 
+{ #category : 'rendering' }
+TConduitRenderer >> augmentedPartialsForTemplate: aTemplatePath [
+    | baseDir global augmented |
+    global := self resolvePartials.
+    baseDir := (aTemplatePath includes: $/)
+        ifTrue: [ (aTemplatePath copyUpToLast: $/) , '/' ]
+        ifFalse: [ '' ].
+    baseDir isEmpty ifTrue: [ ^ global ].
+    augmented := global copy.
+    global keysAndValuesDo: [ :fullKey :template |
+        (fullKey beginsWith: baseDir) ifTrue: [
+            | suffix |
+            suffix := fullKey copyFrom: baseDir size + 1 to: fullKey size.
+            (suffix notEmpty and: [ (suffix includes: $/) not ])
+                ifTrue: [ augmented at: suffix put: template ] ] ].
+    ^ augmented
+
+]
+
 { #category : 'accessing' }
 TConduitRenderer >> conduit [ 
 	^ self subclassResponsibility 
@@ -68,7 +87,7 @@ TConduitRenderer >> renderPage: aPageName layout: aLayoutName context: aDictiona
     
     pageTemplate := self templateNamed: aPageName.
     layoutTemplate := self templateNamed: aLayoutName.
-    partials := self resolvePartials.
+    partials := self augmentedPartialsForTemplate: aPageName.
     
     renderedPage := pageTemplate 
         ifNotNil: [ pageTemplate value: aDictionary partials: partials ]

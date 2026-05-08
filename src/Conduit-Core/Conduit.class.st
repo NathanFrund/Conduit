@@ -144,7 +144,7 @@ Conduit >> syncFiles [
 
 ]
 
-{ #category : 'as yet unclassified' }
+{ #category : 'updating' }
 Conduit >> syncIfNeeded [
     "Only sync if more than 500ms have passed since last check"
     (DateAndTime now - lastCheck) > 500 milliSeconds ifTrue: [ 

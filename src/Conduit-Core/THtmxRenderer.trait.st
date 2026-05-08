@@ -58,16 +58,9 @@ THtmxRenderer >> renderAuto: aTemplateName request: aRequest context: aDictionar
 
 { #category : 'rendering' }
 THtmxRenderer >> renderFragment: aTemplateName context: aDictionary [
-    | templateRegistry targetTemplate |
-    
-    "1. Get the dictionary (Registry) of all templates"
-    templateRegistry := self resolvePartials.
-    
-    "2. Look up the specific template by name"
-    "We use asLowercase to match your resolvePartials logic"
-    targetTemplate := templateRegistry at: aTemplateName asLowercase ifAbsent: [ 
+    | partials targetTemplate |
+    partials := self augmentedPartialsForTemplate: aTemplateName.
+    targetTemplate := partials at: aTemplateName asLowercase ifAbsent: [ 
         ^ '<h1>404: Template Not Found</h1><p>The registry does not contain: ', aTemplateName, '</p>' ].
-    
-    "3. Render the template (which is already a MustacheTemplate object)"
-    ^ targetTemplate value: aDictionary
+    ^ targetTemplate value: aDictionary partials: partials
 ]
