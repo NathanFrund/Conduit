@@ -47,8 +47,10 @@ THtmxRenderer >> isHtmxRequest: aRequest [
 ]
 
 { #category : 'rendering' }
-THtmxRenderer >> render: aTemplateName request: aRequest context: aDictionary [
-    "The Decision Maker"
+THtmxRenderer >> renderAuto: aTemplateName request: aRequest context: aDictionary [
+    "Convenience: automatically choose between a full page (with layout) and a fragment
+     based on HTMX headers. For explicit control, use renderPage:context: or renderFragment:context:."
+    aRequest ifNil: [ ^ self renderPage: aTemplateName context: aDictionary ].
     ^ (self isHtmxRequest: aRequest)
         ifTrue: [ self renderFragment: aTemplateName context: aDictionary ]
         ifFalse: [ self renderPage: aTemplateName context: aDictionary ]
