@@ -73,6 +73,32 @@ Your class must provide a `conduit` accessor (returning a `Conduit` instance or 
 
 ---
 
+## Rendering API (Explicit by Default)
+
+Conduit now provides a clean, explicit API for rendering. The implicit `render:request:context:` method has been removed. Use the following methods directly in your route handlers:
+
+- **`renderPage: aPageName context: aDictionary`** – renders a full HTML page with automatic layout selection (see below).
+- **`renderFragment: aPageName context: aDictionary`** – renders only the template fragment, with no layout.
+- **`isHtmxRequest: aRequest`** – utility to check for the `HX-Request` header (returns a Boolean).
+
+A convenience method is available for routes that want automatic HTMX‑aware switching:
+
+- **`renderAuto: aTemplateName request: aRequest context: aDictionary`** – delegates to `renderPage:` or `renderFragment:` based on the `HX-Request` header. If the request is `nil`, it defaults to a full page.
+
+The explicit methods are recommended for most use cases; `renderAuto:` is a thin utility for rapid prototyping.
+
+---
+
+## Automatic Page‑Specific Layouts
+
+When rendering a full page, Conduit automatically looks for a page‑specific layout template.
+
+**Convention:** For a page named `home`, Conduit first looks for a template called `home_layout`. If that exists, it’s used as the layout; otherwise it falls back to the global `layout` template.
+
+This works in both disk and frozen modes, and respects the same escaping rules as all other templates. Just create `dashboard_layout.mustache` and it will be picked up automatically when you call `renderPage: 'dashboard' context: ...`.
+
+---
+
 ## Template Resolution (Path‑Based)
 
 Conduit maps the directory structure under the root folder directly to template names.  
